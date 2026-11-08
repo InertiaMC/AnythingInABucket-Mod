@@ -1,0 +1,24 @@
+{
+	"schemaVersion": 1,
+	"id": "${id}",
+	"version": "${version}",
+	"name": "${name}",
+	"description": "${description}",
+	"authors": ["${author}"],
+	"license": "MIT",
+	"contact": {
+		"homepage": "https://modrinth.com/mod/anythinginabucket"
+	},
+	"environment": "*",
+	"entrypoints": {
+		"main": ["net.inertiamc.anythinginabucket.loader.FabricEntry"],
+		"client": ["net.inertiamc.anythinginabucket.loader.FabricClientEntry"]
+	},
+	"mixins": ["${id}.mixins.json"],
+	"depends": {
+		"fabricloader": ">=${fabric_loader}",
+		"minecraft": "${minecraft}",
+		"java": ">=${java_version}",
+		"fabric-api": "*"
+	}
+}

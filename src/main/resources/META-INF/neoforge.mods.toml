@@ -1,0 +1,32 @@
+modLoader = "javafml"
+loaderVersion = "[1,)"
+license = "MIT"
+
+[[mods]]
+modId = "${id}"
+version = "${version}"
+displayName = "${name}"
+authors = "${author}"
+displayURL = "https://modrinth.com/mod/anythinginabucket"
+description = '''
+${description}
+'''
+# Needed on the server only: clients without it can still join. With it, a player sees the bucket art with no pack.
+displayTest = "IGNORE_ALL_VERSION"
+
+[[mixins]]
+config = "${id}.mixins.json"
+
+[[dependencies.${id}]]
+modId = "neoforge"
+type = "required"
+versionRange = "${loader_compat}"
+ordering = "NONE"
+side = "BOTH"
+
+[[dependencies.${id}]]
+modId = "minecraft"
+type = "required"
+versionRange = "${minecraft}"
+ordering = "NONE"
+side = "BOTH"

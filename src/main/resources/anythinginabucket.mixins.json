@@ -1,0 +1,16 @@
+{
+	"required": true,
+	"minVersion": "0.8",
+	"package": "net.inertiamc.anythinginabucket.mixin",
+	"compatibilityLevel": "${mixin_compatibility}",
+	"mixins": [
+		"BlockStateBaseMixin",
+		"DispenserBlockMixin",
+		"ItemStackMixin",
+		"RecipeManagerMixin",
+		"RecipeMapAccessor"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

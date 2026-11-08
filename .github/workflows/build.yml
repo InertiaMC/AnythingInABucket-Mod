@@ -1,0 +1,55 @@
+name: Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        loader: [ fabric, neoforge, forge ]
+    steps:
+      # The Gradle cache for every Minecraft version is 5 to 7 GB and can fill the runner's disk on restore.
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: actions/checkout@v7
+      # The bucket art and its look numbers live in the plugin repo.
+      - name: Check out the plugin's resource pack
+        uses: actions/checkout@v7
+        with:
+          repository: InertiaMC/AnythingInABucket-Plugin
+          path: plugin
+          sparse-checkout: |
+            resourcepack
+            src/main/resources/numbers.txt
+          sparse-checkout-cone-mode: false
+      - name: Set up JDK 21 and 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            21
+            25
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      # The versions in settings.gradle.kts, one Gradle run each to stay within the runner's memory.
+      - name: Build
+        run: |
+          for v in 1.21.1 1.21.3 1.21.4 1.21.5 1.21.8 1.21.10 1.21.11 26.1.2 26.2 26.3; do
+            ./gradlew ":$v-${{ matrix.loader }}:build" --no-configuration-cache --no-daemon -PartPack=plugin/resourcepack -PartNumbers=plugin/src/main/resources/numbers.txt
+          done
+      - name: Upload jars
+        if: success()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.loader }}
+          path: versions/*-${{ matrix.loader }}/build/libs/AnythingInABucket-*.jar
+          if-no-files-found: error
+          retention-days: 14

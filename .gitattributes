@@ -1,0 +1,11 @@
+# LF everywhere, whatever core.autocrlf is set to (matches .editorconfig).
+* text=auto eol=lf
+
+# Binary files.
+*.jar       binary
+*.schem     binary
+*.schematic binary
+*.png       binary
+*.jpg       binary
+*.gif       binary
+*.zip       binary

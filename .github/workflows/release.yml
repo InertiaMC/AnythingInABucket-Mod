@@ -1,0 +1,82 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*.*.*' ]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        loader: [ fabric, neoforge, forge ]
+    steps:
+      # The Gradle cache can fill the runner's disk on restore (see build.yml).
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /usr/local/.ghcup /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: actions/checkout@v7
+      # The bucket art and its look numbers live in the plugin repo.
+      - name: Check out the plugin's resource pack
+        uses: actions/checkout@v7
+        with:
+          repository: InertiaMC/AnythingInABucket-Plugin
+          path: plugin
+          sparse-checkout: |
+            resourcepack
+            src/main/resources/numbers.txt
+          sparse-checkout-cone-mode: false
+      - name: The tag matches mod.version
+        run: |
+          version=$(sed -n 's/^mod\.version *= *"\(.*\)"/\1/p' stonecutter.properties.toml)
+          test "v$version" = "${GITHUB_REF_NAME}" || { echo "Tag ${GITHUB_REF_NAME} but mod.version is $version"; exit 1; }
+      - name: Set up JDK 21 and 25
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: |
+            21
+            25
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+      - name: Build
+        run: |
+          for v in 1.21.1 1.21.3 1.21.4 1.21.5 1.21.8 1.21.10 1.21.11 26.1.2 26.2 26.3; do
+            ./gradlew ":$v-${{ matrix.loader }}:build" --no-configuration-cache --no-daemon -PartPack=plugin/resourcepack -PartNumbers=plugin/src/main/resources/numbers.txt
+          done
+      - name: Upload jars
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.loader }}
+          path: versions/*-${{ matrix.loader }}/build/libs/AnythingInABucket-*.jar
+          if-no-files-found: error
+          retention-days: 1
+
+  # Jars are published on Modrinth, so the release run only keeps them as one artifact.
+  jars:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download jars
+        uses: actions/download-artifact@v8
+        with:
+          path: jars
+          merge-multiple: true
+      # 3 loaders x 10 version groups. Flatten the per-project build/libs folders into one.
+      - name: Exactly 30 jars
+        run: |
+          find jars -mindepth 2 -name 'AnythingInABucket-*.jar' -exec mv {} jars/ \;
+          ls -l jars
+          count=$(ls jars/AnythingInABucket-*.jar | wc -l)
+          test "$count" = 30 || { echo "Expected 30 jars, found $count"; exit 1; }
+      - name: Upload the 30 jars
+        uses: actions/upload-artifact@v7
+        with:
+          name: AnythingInABucket-Mod-${{ github.ref_name }}
+          path: jars/AnythingInABucket-*.jar
+          if-no-files-found: error
